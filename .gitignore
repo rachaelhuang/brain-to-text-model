@@ -1,0 +1,23 @@
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Data files
+data/
+*.hdf5
+*.csv
+*.npy
+
+# Jupyter auto files
+.ipynb_checkpoints/
+
+# System files
+.DS_Store
+
+# Kaggle stuff
+kaggle.json
+
+# Model checkpoints
+*.pt
+*.pth
