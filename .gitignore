@@ -12,7 +12,7 @@ data/
 # Other files
 language_model/
 analyses/
-model_training/
+# model_training/
 nejm_b2txt_utils/
 nejm_b2txt_utils.egg.info/
 notebooks/
