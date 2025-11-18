@@ -1,0 +1,35 @@
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Data files
+data/
+*.hdf5
+*.csv
+*.npy
+
+# Other files
+language_model/
+analyses/
+model_training/
+nejm_b2txt_utils/
+nejm_b2txt_utils.egg.info/
+notebooks/
+submissions/
+setup_lm.sh
+setup.py
+setup.sh
+
+# Jupyter auto files
+.ipynb_checkpoints/
+
+# System files
+.DS_Store
+
+# Kaggle stuff
+kaggle.json
+
+# Model checkpoints
+*.pt
+*.pth
