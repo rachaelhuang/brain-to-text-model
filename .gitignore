@@ -9,6 +9,7 @@ data/
 *.csv
 *.npy
 
+<<<<<<< HEAD
 # Other files
 language_model/
 analyses/
@@ -21,6 +22,8 @@ setup_lm.sh
 setup.py
 setup.sh
 
+=======
+>>>>>>> origin/main
 # Jupyter auto files
 .ipynb_checkpoints/
 
