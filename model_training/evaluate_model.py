@@ -35,11 +35,15 @@ data_dir = args.data_dir
 # define evaluation type
 eval_type = args.eval_type  # can be 'val' or 'test'. if 'test', ground truth is not available
 
-# load csv file
-b2txt_csv_df = pd.read_csv(args.csv_path)
+# load csv file only if it exists
+if args.csv_path and os.path.exists(args.csv_path) and args.csv_path not in ["None", "none"]:
+    b2txt_csv_df = pd.read_csv(args.csv_path)
+else:
+    print("No CSV provided — continuing without dataset metadata.")
+    b2txt_csv_df = None
 
 # load model args
-model_args = OmegaConf.load(os.path.join(model_path, 'checkpoint/args.yaml'))
+model_args = OmegaConf.load(os.path.join(model_path, 'checkpoint', 'args.yaml'))
 
 # set up gpu device
 gpu_number = args.gpu_number
@@ -69,7 +73,12 @@ model = GRUDecoder(
 )
 
 # load model weights
-checkpoint = torch.load(os.path.join(model_path, 'checkpoint/best_checkpoint'), weights_only=False)
+checkpoint = torch.load(
+    os.path.join(model_path, 'checkpoint', 'best_checkpoint'),
+    map_location=torch.device('cpu'),
+    weights_only=False
+)
+
 # rename keys to not start with "module." (happens if model was saved with DataParallel)
 for key in list(checkpoint['model_state_dict'].keys()):
     checkpoint['model_state_dict'][key.replace("module.", "")] = checkpoint['model_state_dict'].pop(key)
@@ -115,7 +124,11 @@ with tqdm(total=total_test_trials, desc='Predicting phoneme sequences', unit='tr
             neural_input = np.expand_dims(neural_input, axis=0)
 
             # convert to torch tensor
-            neural_input = torch.tensor(neural_input, device=device, dtype=torch.bfloat16)
+            # if device is CPU, use float32; else bfloat16
+            if device.type == 'cpu':
+                neural_input = torch.tensor(neural_input, device=device, dtype=torch.float32)
+            else:
+                neural_input = torch.tensor(neural_input, device=device, dtype=torch.bfloat16)
 
             # run decoding step
             logits = runSingleDecodingStep(neural_input, input_layer, model, model_args, device)

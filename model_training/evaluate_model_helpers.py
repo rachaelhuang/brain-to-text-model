@@ -87,22 +87,29 @@ def rearrange_speech_logits_pt(logits):
 def runSingleDecodingStep(x, input_layer, model, model_args, device):
 
     # Use autocast for efficiency
-    with torch.autocast(device_type = "cuda", enabled = model_args['use_amp'], dtype = torch.bfloat16):
+    # inside runSingleDecodingStep
+    if device.type == "cuda" and model_args['use_amp']:
+        autocast_context = torch.autocast(device_type="cuda", dtype=torch.bfloat16)
+    else:
+        # on CPU, just do a no-op context
+        from contextlib import nullcontext
+        autocast_context = nullcontext()
 
+    with autocast_context:
         x = gauss_smooth(
             inputs = x, 
-            device = device,
-            smooth_kernel_std = model_args['dataset']['data_transforms']['smooth_kernel_std'],
-            smooth_kernel_size = model_args['dataset']['data_transforms']['smooth_kernel_size'],
-            padding = 'valid',
+            device=device,
+            smooth_kernel_std=model_args['dataset']['data_transforms']['smooth_kernel_std'],
+            smooth_kernel_size=model_args['dataset']['data_transforms']['smooth_kernel_size'],
+            padding='valid',
         )
 
         with torch.no_grad():
             logits, _ = model(
-                x = x,
-                day_idx = torch.tensor([input_layer], device=device),
-                states = None, # no initial states
-                return_state = True,
+                x=x,
+                day_idx=torch.tensor([input_layer], device=device),
+                states=None,
+                return_state=True,
             )
 
     # convert logits from bfloat16 to float32
