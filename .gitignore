@@ -9,21 +9,15 @@ data/
 *.csv
 *.npy
 
-<<<<<<< HEAD
 # Other files
 language_model/
 analyses/
-model_training/
 nejm_b2txt_utils/
-nejm_b2txt_utils.egg.info/
-notebooks/
-submissions/
+nejm_b2txt_utils.egg-info/
 setup_lm.sh
 setup.py
 setup.sh
 
-=======
->>>>>>> origin/main
 # Jupyter auto files
 .ipynb_checkpoints/
 
