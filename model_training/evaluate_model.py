@@ -11,6 +11,7 @@ import argparse
 
 from rnn_model import GRUDecoder
 from evaluate_model_helpers import *
+from data_augmentations import session_normalize
 
 # argument parser for command line arguments
 parser = argparse.ArgumentParser(description='Evaluate a pretrained RNN model on the copy task dataset.')
@@ -25,6 +26,8 @@ parser.add_argument('--csv_path', type=str, default='../data/t15_copyTaskData_de
                     help='Path to the CSV file with metadata about the dataset (relative to the current working directory).')
 parser.add_argument('--gpu_number', type=int, default=1,
                     help='GPU number to use for RNN model inference. Set to -1 to use CPU.')
+parser.add_argument('--use_session_norm', action='store_true',
+                    help='Apply session-level normalization to neural features.')
 args = parser.parse_args()
 
 # paths to model and data directories
@@ -108,6 +111,15 @@ print(f'Total number of {eval_type} trials: {total_test_trials}')
 print()
 
 
+# Compute session-specific statistics if session normalization is enabled
+session_stats = {}
+if args.use_session_norm:
+    print("Computing session-specific statistics for normalization...")
+    session_stats = compute_session_stats(data_dir, model_args['dataset']['sessions'], model_args)
+    print(f"Computed statistics for {len(session_stats)} sessions.")
+    print()
+
+
 # put neural data through the pretrained model to get phoneme predictions (logits)
 with tqdm(total=total_test_trials, desc='Predicting phoneme sequences', unit='trial') as pbar:
     for session, data in test_data.items():
@@ -115,6 +127,9 @@ with tqdm(total=total_test_trials, desc='Predicting phoneme sequences', unit='tr
         data['logits'] = []
         data['pred_seq'] = []
         input_layer = model_args['dataset']['sessions'].index(session)
+        
+        # Get session statistics if available
+        stats = session_stats.get(session, None) if args.use_session_norm else None
         
         for trial in range(len(data['neural_features'])):
             # get neural input for the trial
@@ -129,6 +144,10 @@ with tqdm(total=total_test_trials, desc='Predicting phoneme sequences', unit='tr
                 neural_input = torch.tensor(neural_input, device=device, dtype=torch.float32)
             else:
                 neural_input = torch.tensor(neural_input, device=device, dtype=torch.bfloat16)
+
+            # Apply session normalization if enabled
+            if stats is not None:
+                neural_input = session_normalize(neural_input, session_stats=stats, device=device)
 
             # run decoding step
             logits = runSingleDecodingStep(neural_input, input_layer, model, model_args, device)
@@ -272,7 +291,7 @@ if eval_type == 'val':
         print(f'{lm_results["session"][i]} - Block {lm_results["block"][i]}, Trial {lm_results["trial"][i]}')
         print(f'True sentence:       {true_sentence}')
         print(f'Predicted sentence:  {pred_sentence}')
-        print(f'WER: {ed} / {100 * len(true_sentence.split())} = {ed / len(true_sentence.split()):.2f}%')
+        print(f'WER: {ed} / {len(true_sentence.split())} = {100 * ed / len(true_sentence.split()):.2f}%')
         print()
 
     print(f'Total true sentence length: {total_true_length}')

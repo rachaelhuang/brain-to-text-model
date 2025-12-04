@@ -3,6 +3,7 @@ import numpy as np
 import h5py
 import time
 import re
+import os
 
 from data_augmentations import gauss_smooth
 
@@ -75,6 +76,52 @@ def load_h5py_file(file_path, b2txt_csv_df):
             data['trial_num'].append(trial_num)
             data['corpus'].append(corpus_name)
     return data
+
+def compute_session_stats(data_dir, sessions, model_args):
+    """
+    Compute mean and std statistics for each session to enable session-level normalization.
+    
+    Args:
+        data_dir (str): Path to data directory
+        sessions (list): List of session names
+        model_args: Model configuration
+    
+    Returns:
+        dict: Dictionary mapping session names to {'mean': tensor, 'std': tensor}
+    """
+    session_stats = {}
+    
+    for session in sessions:
+        session_path = os.path.join(data_dir, session)
+        if not os.path.exists(session_path):
+            print(f"Warning: Session directory not found: {session_path}")
+            continue
+            
+        files = [f for f in os.listdir(session_path) if f.endswith('.hdf5')]
+        all_features = []
+        
+        for file in files:
+            file_path = os.path.join(session_path, file)
+            with h5py.File(file_path, 'r') as f:
+                for key in f.keys():
+                    neural_features = f[key]['input_features'][:]
+                    all_features.append(neural_features)
+        
+        if len(all_features) > 0:
+            # Concatenate all features and compute statistics
+            all_features = np.concatenate(all_features, axis=0)  # [total_time_steps, n_features]
+            
+            mean = torch.tensor(all_features.mean(axis=0), dtype=torch.float32)
+            std = torch.tensor(all_features.std(axis=0), dtype=torch.float32) + 1e-8
+            
+            session_stats[session] = {
+                'mean': mean.unsqueeze(0).unsqueeze(0),  # [1, 1, n_features]
+                'std': std.unsqueeze(0).unsqueeze(0)     # [1, 1, n_features]
+            }
+            
+            print(f'  ✓ Computed stats for session {session} ({len(all_features)} time steps)')
+    
+    return session_stats
 
 def rearrange_speech_logits_pt(logits):
     # original order is [BLANK, phonemes..., SIL]
