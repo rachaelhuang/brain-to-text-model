@@ -133,12 +133,11 @@ def rearrange_speech_logits_pt(logits):
 # smooths data and puts it through the model.
 def runSingleDecodingStep(x, input_layer, model, model_args, device):
 
-    # Use autocast for efficiency
+    # Use autocast for efficiency (we changed to not use because we're on a cpu)
     # inside runSingleDecodingStep
     if device.type == "cuda" and model_args['use_amp']:
         autocast_context = torch.autocast(device_type="cuda", dtype=torch.bfloat16)
     else:
-        # on CPU, just do a no-op context
         from contextlib import nullcontext
         autocast_context = nullcontext()
 
@@ -159,12 +158,8 @@ def runSingleDecodingStep(x, input_layer, model, model_args, device):
                 return_state=True,
             )
 
-    # convert logits from bfloat16 to float32
+    # convert logits from bfloat16 to float32 because we're on a cpu
     logits = logits.float().cpu().numpy()
-
-    # # original order is [BLANK, phonemes..., SIL]
-    # # rearrange so the order is [BLANK, SIL, phonemes...]
-    # logits = rearrange_speech_logits_pt(logits)
 
     return logits
 
@@ -220,6 +215,7 @@ def update_remote_lm_params(
     ):
     
     # update remote lm params
+    # we had to not use opt rescoring because we are on a cpu
     entry_dict = {
         # 'max_active': max_active,
         # 'min_active': min_active,

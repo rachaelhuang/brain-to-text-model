@@ -31,7 +31,6 @@ parser.add_argument('--use_session_norm', action='store_true',
 args = parser.parse_args()
 
 # paths to model and data directories
-# Note: these paths are relative to the current working directory
 model_path = args.model_path
 data_dir = args.data_dir
 
@@ -48,7 +47,7 @@ else:
 # load model args
 model_args = OmegaConf.load(os.path.join(model_path, 'checkpoint', 'args.yaml'))
 
-# set up gpu device
+# set up gpu device (in this case we used cpu)
 gpu_number = args.gpu_number
 if torch.cuda.is_available() and gpu_number >= 0:
     if gpu_number >= torch.cuda.device_count():
@@ -111,7 +110,7 @@ print(f'Total number of {eval_type} trials: {total_test_trials}')
 print()
 
 
-# Compute session-specific statistics if session normalization is enabled
+# compute session-specific statistics if session normalization is enabled
 session_stats = {}
 if args.use_session_norm:
     print("Computing session-specific statistics for normalization...")
@@ -139,13 +138,12 @@ with tqdm(total=total_test_trials, desc='Predicting phoneme sequences', unit='tr
             neural_input = np.expand_dims(neural_input, axis=0)
 
             # convert to torch tensor
-            # if device is CPU, use float32; else bfloat16
             if device.type == 'cpu':
                 neural_input = torch.tensor(neural_input, device=device, dtype=torch.float32)
             else:
                 neural_input = torch.tensor(neural_input, device=device, dtype=torch.bfloat16)
 
-            # Apply session normalization if enabled
+            # Apply session normalization if enabled (we decided not to use it after our temporal masking)
             if stats is not None:
                 neural_input = session_normalize(neural_input, session_stats=stats, device=device)
 
