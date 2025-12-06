@@ -19,7 +19,7 @@ use_amp: false  # Disable for CPU
 output_dir: finetuned_2025_model
 checkpoint_dir: finetuned_2025_model/checkpoint
 
-# CRITICAL: Start from pretrained checkpoint
+# Start from pretrained checkpoint
 init_from_checkpoint: true
 init_checkpoint_path: data/t15_pretrained_rnn_baseline/checkpoint/best_checkpoint
 
@@ -28,16 +28,16 @@ save_all_val_steps: false
 save_final_model: true
 save_val_metrics: true
 early_stopping: true
-early_stopping_val_steps: 10  # Stop after 10 steps without improvement
+early_stopping_val_steps: 10  # stop after 10 steps without improvement
 
-# SHORT training (fine-tuning)
-num_training_batches: 2000  # Much shorter than 10000
+# short training (fine-tuning)
+num_training_batches: 2000  # short for RT
 batches_per_val_step: 200   # Validate frequently
 batches_per_train_log: 50
 
 # Lower learning rate for fine-tuning
 lr_scheduler_type: cosine
-lr_max: 0.0005  # 10x lower than original
+lr_max: 0.0005 
 lr_min: 0.00001
 lr_decay_steps: 2000
 lr_warmup_steps: 100
@@ -57,7 +57,7 @@ grad_norm_clip_value: 10
 
 log_individual_day_val_PER: true
 log_val_skip_logs: false
-save_val_logits: false  # Save time
+save_val_logits: false
 save_val_data: false
 
 dataset:
@@ -76,10 +76,10 @@ dataset:
     temporal_mask_length: 4
   
   neural_dim: 512
-  batch_size: 32  # Smaller for CPU
+  batch_size: 32  # We made this smaller for CPU
   n_classes: 41
   max_seq_elements: 500
-  days_per_batch: 2  # Smaller for CPU
+  days_per_batch: 2  # also smaller for CPU
   seed: 1
   num_dataloader_workers: 2  # Fewer workers for CPU
   loader_shuffle: true
@@ -89,7 +89,7 @@ dataset:
   dataset_dir: ../data/hdf5_data_final
   bad_trials_dict: null
   
-  # ONLY 2025 sessions for fine-tuning
+  # ONly 2025 sessions for fine-tuning because we noticed it had more temporal degradation
   sessions:
     - t15.2025.01.10
     - t15.2025.01.12

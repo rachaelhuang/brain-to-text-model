@@ -100,7 +100,7 @@ def feature_dropout(inputs, dropout_prob=0.1, device='cpu'):
     # Create dropout mask for features (same mask across time for each feature)
     B, T, N = inputs.shape
     mask = torch.rand(B, 1, N, device=device) > dropout_prob
-    mask = mask.float() / (1 - dropout_prob)  # Scale to maintain expected value
+    mask = mask.float() / (1 - dropout_prob)  # scale to maintain expected value
     
     return inputs * mask
 
@@ -125,7 +125,7 @@ def time_warping(inputs, warp_factor_range=(0.9, 1.1), device='cpu'):
         warp_factor = np.random.uniform(*warp_factor_range)
         new_T = int(T * warp_factor)
         
-        # Interpolate to new length
+        # interpolate to new length
         sample = inputs[b:b+1].permute(0, 2, 1)  # [1, N, T]
         warped_sample = F.interpolate(sample, size=new_T, mode='linear', align_corners=False)
         
@@ -144,7 +144,7 @@ def session_normalize(inputs, session_stats=None, device='cpu'):
     
     Args:
         inputs (tensor : B x T x N): Neural features [batch, time, features]
-        session_stats (dict): Dictionary with 'mean' and 'std' tensors for normalization
+        session_stats (dict): dictionary with 'mean' and 'std' tensors for normalization
         device (str): Device to use for computation
     
     Returns:
